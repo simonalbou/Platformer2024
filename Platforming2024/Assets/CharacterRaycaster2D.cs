@@ -14,6 +14,8 @@ public class CharacterRaycaster2D : MonoBehaviour
     public int accuracy = 4;
     [Range(0, 0.1f)]
     public float skinWidth = 0.02f;
+    public LayerMask collidableElements;
+    public LayerMask collidableFromAboveOnly;
     public Transform self;
     public BoxCollider2D selfBox;
 
@@ -52,13 +54,23 @@ public class CharacterRaycaster2D : MonoBehaviour
     public bool CalculateCollision(MovementDirection dir, float dist)
     {
         Vector2 direction = DirectionToVector(dir);
+        LayerMask usedLayerMask = collidableElements;
+        if (dir == MovementDirection.Below) usedLayerMask |= collidableFromAboveOnly;
+        
+        // bitwise operators:
+        /**
+        usedLayerMask = collidableElements & collidableFromAboveOnly;
+        usedLayerMask = collidableElements | collidableFromAboveOnly;
+        usedLayerMask = collidableElements ^ collidableFromAboveOnly;
+        usedLayerMask = ~collidableElements;
+        /**/
 
         // cas particulier : un unique ray au milieu du collider
         if (accuracy == 1)
         {
             Vector2 origin = GetPointPositionInBox(direction);
             origin += direction * skinWidth;
-            RaycastHit2D hitResult = Physics2D.Raycast(origin, direction, dist);
+            RaycastHit2D hitResult = Physics2D.Raycast(origin, direction, dist, usedLayerMask);
             return hitResult.collider != null;
         }
 
@@ -102,7 +114,7 @@ public class CharacterRaycaster2D : MonoBehaviour
             origin += direction * skinWidth;
 
             // on exécute un raycast
-            RaycastHit2D hitResult = Physics2D.Raycast(origin, direction, dist);
+            RaycastHit2D hitResult = Physics2D.Raycast(origin, direction, dist, usedLayerMask);
             Debug.DrawRay(origin, direction, Color.blue);
 
             // examiner le résultat : si un collider a été touché, on renvoie true (il y a collision)
