@@ -135,43 +135,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 46bc8dad486ef724295309506a49c8b0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeed: 5
-  gravity: 14
-  maxAllowedJumps: 3
-  maxCoyoteTime: 0.3
-  gravityMultiplierCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0.0030406015
-      inSlope: 21.09484
-      outSlope: 21.09484
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0.14070603
-    - serializedVersion: 3
-      time: 0.20232895
-      value: 1.9423978
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-    - serializedVersion: 3
-      time: 0.39972812
-      value: 0
-      inSlope: -25.453766
-      outSlope: -25.453766
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.13450024
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
+  characterProfile: {fileID: 11400000, guid: 1531f2be79779374da38e5259a5c33bd, type: 2}
   self: {fileID: 2847425360397570587}
   raycaster: {fileID: 3984010655008243501}
 --- !u!114 &3984010655008243501

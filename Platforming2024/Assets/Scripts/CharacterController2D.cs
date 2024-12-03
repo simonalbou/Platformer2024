@@ -3,12 +3,7 @@ using UnityEngine;
 
 public class CharacterController2D : MonoBehaviour
 {
-    public float moveSpeed;
-    public float gravity;
-    public int maxAllowedJumps;
-    public float maxCoyoteTime = 0.3f;
-    public AnimationCurve gravityMultiplierCurve;
-
+    public CharacterProfile characterProfile;
     public Transform self;
     public CharacterRaycaster2D raycaster;
 
@@ -30,7 +25,7 @@ public class CharacterController2D : MonoBehaviour
         Vector2 movement = Vector2.zero;
 
         // check inputs
-        movement.x = Input.GetAxis("Horizontal") * moveSpeed * Time.deltaTime;
+        movement.x = Input.GetAxis("Horizontal") * characterProfile.moveSpeed * Time.deltaTime;
 
         // check jump
         if (Input.GetKeyDown(KeyCode.Z)) TryJump();        
@@ -43,12 +38,12 @@ public class CharacterController2D : MonoBehaviour
             //jumpMultiplier = gravityMultiplierCurve.Evaluate(timeSinceJumped);
 
             // option 2 : appliquer le delta de position.y d'une frame à l'autre, en tant que mouvement vertical
-            float yPositionCurrentFrame = gravityMultiplierCurve.Evaluate(timeSinceJumped);
-            float yPositionPreviousFrame = gravityMultiplierCurve.Evaluate(timeSinceJumped - Time.deltaTime);
+            float yPositionCurrentFrame = characterProfile.gravityMultiplierCurve.Evaluate(timeSinceJumped);
+            float yPositionPreviousFrame = characterProfile.gravityMultiplierCurve.Evaluate(timeSinceJumped - Time.deltaTime);
             movement.y = yPositionCurrentFrame - yPositionPreviousFrame;
 
             // si je découvre que je suis arrivé au bout de la courbe, on arrête le saut
-            float xMax = gravityMultiplierCurve.keys[gravityMultiplierCurve.keys.Length-1].time;
+            float xMax = characterProfile.gravityMultiplierCurve.keys[characterProfile.gravityMultiplierCurve.keys.Length-1].time;
             if (timeSinceJumped > xMax)
             {
                 isJumping = false;
@@ -57,13 +52,13 @@ public class CharacterController2D : MonoBehaviour
 
         // check/apply gravity
         // le "else" n'est à utiliser que pour l'option 2
-        else movement.y = gravity * jumpMultiplier * -1 * Time.deltaTime;
+        else movement.y = characterProfile.gravity * jumpMultiplier * -1 * Time.deltaTime;
 
         // coyote time (if applicable) : right after falling, allow one jump as if still on the ground
         if (isUnderCoyoteTime)
         {
             float timeSinceFell = Time.time - coyoteTimestamp;
-            if (timeSinceFell > maxCoyoteTime)
+            if (timeSinceFell > characterProfile.maxCoyoteTime)
             {
                 remainingJumps--;
                 isUnderCoyoteTime = false;
@@ -137,7 +132,7 @@ public class CharacterController2D : MonoBehaviour
             {
                 isGrounded = true;
                 isUnderCoyoteTime = false;
-                remainingJumps = maxAllowedJumps;
+                remainingJumps = characterProfile.maxAllowedJumps;
             }
             return;
         }
