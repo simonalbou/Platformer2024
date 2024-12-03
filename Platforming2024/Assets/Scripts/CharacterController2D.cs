@@ -1,11 +1,23 @@
-using Unity.Collections;
 using UnityEngine;
+using UnityEngine.Events;
+
+[System.Flags]
+public enum CollisionFlags2D
+{
+    Right, // 1 = 1 << 0
+    Above, // 2 = 1 << 1
+    Left, // 4 = 1 << 2 
+    Below // 8 = 1 << 3
+}
 
 public class CharacterController2D : MonoBehaviour
 {
     public CharacterProfile characterProfile;
     public Transform self;
     public CharacterRaycaster2D raycaster;
+    public UnityEvent onFell, onGrounded, onHurt;
+    public UnityEvent<int> onJumped;
+    public UnityEvent<CollisionFlags2D> onCollisionStay;
 
     [System.NonSerialized] public bool isGrounded;
     [System.NonSerialized] public bool isJumping;
@@ -13,6 +25,7 @@ public class CharacterController2D : MonoBehaviour
     [System.NonSerialized] public float jumpTimestamp;
     [System.NonSerialized] public float coyoteTimestamp;
     [System.NonSerialized] public int remainingJumps;
+    [System.NonSerialized] public CollisionFlags2D collisionFlags;
 
 
     void Update()
@@ -87,15 +100,18 @@ public class CharacterController2D : MonoBehaviour
 
         // feedbacks divers ici : audio, VFX, etc etc
         // et évidemment, l'animation de saut
+        int jumpIndex = characterProfile.maxAllowedJumps - (remainingJumps+1);
+        onJumped?.Invoke(jumpIndex);
     }
 
     void Move(Vector2 movement)
     {
-        HorizontalMovement(movement.x);
-        VerticalMovement(movement.y);
+        bool collH = HorizontalMovement(movement.x);
+        bool collV = VerticalMovement(movement.y);
+        if (collH || collV) onCollisionStay?.Invoke(collisionFlags);
     }
 
-    void HorizontalMovement(float movement)
+    bool HorizontalMovement(float movement)
     {
         // détecter la collision éventuelle
         bool isThereCollision = raycaster.CalculateCollision(
@@ -104,13 +120,21 @@ public class CharacterController2D : MonoBehaviour
         );
 
         // si collision, annule le mouvement
-        if (isThereCollision) return;
+        if (isThereCollision)
+        {
+            if (movement > 0) collisionFlags |= CollisionFlags2D.Right; // ajouter le marqueur "droite"
+            else collisionFlags |= CollisionFlags2D.Left;
+            return true;
+        }
         
         // else :
+        if (movement > 0) collisionFlags &= ~CollisionFlags2D.Right; // enlever le marqueur "droite"
+        else collisionFlags &= ~CollisionFlags2D.Left;
         self.Translate(Vector3.right * movement);
+        return false;
     }
 
-    void VerticalMovement(float movement)
+    bool VerticalMovement(float movement)
     {
         // détecter la collision éventuelle
 
@@ -133,8 +157,11 @@ public class CharacterController2D : MonoBehaviour
                 isGrounded = true;
                 isUnderCoyoteTime = false;
                 remainingJumps = characterProfile.maxAllowedJumps;
+                collisionFlags |= CollisionFlags2D.Below; // ajouter le marqueur "below"
+                onGrounded?.Invoke();
             }
-            return;
+            collisionFlags |= CollisionFlags2D.Above;
+            return true;
         }
         
         // else : il n'y a pas collision
@@ -147,12 +174,18 @@ public class CharacterController2D : MonoBehaviour
             {
                 isUnderCoyoteTime = true;
                 coyoteTimestamp = Time.time;
+                onFell?.Invoke();
             }
-
+            
+            collisionFlags &= ~CollisionFlags2D.Below;
             isGrounded = false;
         }
+
+        collisionFlags &= ~CollisionFlags2D.Above; // enlever le marqueur "Above"
         
         // enfin, exécuter le mouvement
         self.Translate(Vector3.up * movement);
+
+        return false;
     }
 }
