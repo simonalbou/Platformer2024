@@ -12,10 +12,16 @@ public enum CollisionFlags2D
 
 public class CharacterController2D : MonoBehaviour
 {
+    [Header("Component References")]
     public CharacterProfile characterProfile;
     public Transform self;
     public CharacterRaycaster2D raycaster;
-    public UnityEvent onFell, onGrounded, onHurt;
+    public Animator animator;
+    public Transform graphicTransform;
+
+    [Header("Events")]
+    public UnityEvent onFell;
+    public UnityEvent onGrounded, onHurt;
     public UnityEvent<int> onJumped;
     public UnityEvent<CollisionFlags2D> onCollisionStay;
 
@@ -27,6 +33,10 @@ public class CharacterController2D : MonoBehaviour
     [System.NonSerialized] public int remainingJumps;
     [System.NonSerialized] public CollisionFlags2D collisionFlags;
 
+    void Start()
+    {
+        animator.SetFloat("WalkSpeed", characterProfile.moveSpeed);
+    }
 
     void Update()
     {
@@ -39,6 +49,26 @@ public class CharacterController2D : MonoBehaviour
 
         // check inputs
         movement.x = Input.GetAxis("Horizontal") * characterProfile.moveSpeed * Time.deltaTime;
+        
+        // adapt graphics
+        animator.SetBool("IsMovingHorizontally", movement.x != 0);
+        if (movement.x < 0)
+        {
+            graphicTransform.localScale = new Vector3(
+                -Mathf.Abs(graphicTransform.localScale.x),
+                graphicTransform.localScale.y,
+                graphicTransform.localScale.z
+            );
+        }
+        // deux ifs distincts, et non un if/else, de manière à écarter le cas où x==0
+        if (movement.x > 0)
+        {
+            graphicTransform.localScale = new Vector3(
+                Mathf.Abs(graphicTransform.localScale.x),
+                graphicTransform.localScale.y,
+                graphicTransform.localScale.z
+            );
+        }
 
         // check jump
         if (Input.GetKeyDown(KeyCode.Z)) TryJump();        
@@ -155,6 +185,7 @@ public class CharacterController2D : MonoBehaviour
             if (movement < 0)
             {
                 isGrounded = true;
+                animator.SetBool("IsGrounded", true);
                 isUnderCoyoteTime = false;
                 remainingJumps = characterProfile.maxAllowedJumps;
                 collisionFlags |= CollisionFlags2D.Below; // ajouter le marqueur "below"
@@ -179,6 +210,7 @@ public class CharacterController2D : MonoBehaviour
             
             collisionFlags &= ~CollisionFlags2D.Below;
             isGrounded = false;
+            animator.SetBool("IsGrounded", false);
         }
 
         collisionFlags &= ~CollisionFlags2D.Above; // enlever le marqueur "Above"
